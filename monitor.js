@@ -170,13 +170,25 @@ class PaymentMonitor {
             if (allRows.length > 0) {
                 console.log(`🔍 Found ${allRows.length} pending payments to check (${paymentRows.length} in payment_requests, ${transactionRows.length} in transactions)`);
                 
+                // Track processed payment references to avoid duplicates in same cycle
+                const processedReferences = new Set();
+                
                 for (const payment of allRows) {
                     try {
+                        // Skip if we've already processed this payment reference in this cycle
+                        if (processedReferences.has(payment.reference_id)) {
+                            console.log(`⚠️  Skipping duplicate payment reference ${payment.reference_id} in same polling cycle`);
+                            continue;
+                        }
+                        
                         const newStatus = await this.checkIOTECStatus(payment.reference_id);
                         
                         if (newStatus !== 'pending') {
                             await this.updatePaymentStatus(payment.id, newStatus, payment.table_name, payment.reference_id);
                             console.log(`✅ Updated payment ${payment.reference_id} in ${payment.table_name}: ${newStatus}`);
+                            
+                            // Mark this payment reference as processed
+                            processedReferences.add(payment.reference_id);
                         }
                     } catch (error) {
                         console.error(`❌ Error checking payment ${payment.reference_id}:`, error.message);
@@ -311,22 +323,32 @@ class PaymentMonitor {
                 if (tableName === 'transactions') {
                     // We already have the transaction ID
                     const [rows] = await this.connection.execute(
-                        'SELECT bundle_id FROM transactions WHERE id = ?',
+                        'SELECT bundle_id, voucher_id FROM transactions WHERE id = ?',
                         [paymentId]
                     );
                     if (rows.length > 0) {
                         transactionId = paymentId;
                         bundleId = rows[0].bundle_id;
+                        // Check if voucher already assigned
+                        if (rows[0].voucher_id) {
+                            console.log(`⚠️  Voucher already assigned to transaction ${transactionId} (voucher_id: ${rows[0].voucher_id})`);
+                            return; // Skip voucher assignment
+                        }
                     }
                 } else if (tableName === 'payment_requests') {
                     // Find the transaction by payment reference
                     const [rows] = await this.connection.execute(
-                        'SELECT id, bundle_id FROM transactions WHERE payment_reference = ?',
+                        'SELECT id, bundle_id, voucher_id FROM transactions WHERE payment_reference = ?',
                         [referenceId]
                     );
                     if (rows.length > 0) {
                         transactionId = rows[0].id;
                         bundleId = rows[0].bundle_id;
+                        // Check if voucher already assigned
+                        if (rows[0].voucher_id) {
+                            console.log(`⚠️  Voucher already assigned to transaction ${transactionId} (voucher_id: ${rows[0].voucher_id})`);
+                            return; // Skip voucher assignment
+                        }
                     }
                 }
                 
