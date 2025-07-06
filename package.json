@@ -1,0 +1,25 @@
+{
+  "name": "payment-monitor",
+  "version": "1.0.0",
+  "description": "Real-time payment status monitor for IOTEC payments",
+  "main": "monitor.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node monitor.js",
+    "dev": "nodemon monitor.js",
+    "production": "NODE_ENV=production node monitor.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.6.5",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": ["payment", "monitor", "iotec", "nodejs", "billing"],
+  "author": "Your Name",
+  "license": "MIT"
+} 
