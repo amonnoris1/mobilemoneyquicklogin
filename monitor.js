@@ -230,6 +230,47 @@ class PaymentMonitor {
         return statusMap[apiStatus?.toLowerCase()] || 'pending';
     }
 
+    async sendVoucherSMS(voucherId, transactionId, referenceId) {
+        try {
+            // Get transaction details for SMS sending
+            const [rows] = await this.connection.execute(
+                'SELECT customer_phone FROM transactions WHERE id = ?',
+                [transactionId]
+            );
+            
+            if (rows.length === 0) {
+                console.log(`⚠️  No transaction found for SMS sending (transaction ${transactionId})`);
+                return;
+            }
+            
+            const customerPhone = rows[0].customer_phone;
+            
+            // Call PHP endpoint to send SMS
+            const smsApiUrl = process.env.SMS_API_URL || 'https://backup.norismedia.com/api/send_voucher_sms.php';
+            
+            const smsResponse = await axios.post(smsApiUrl, {
+                voucher_id: voucherId,
+                customer_phone: customerPhone,
+                transaction_id: transactionId
+            }, {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                timeout: 30000 // 30 second timeout
+            });
+            
+            if (smsResponse.data.success) {
+                console.log(`📱 SMS sent successfully for voucher ${voucherId} to ${customerPhone}`);
+            } else {
+                console.log(`⚠️  SMS failed for voucher ${voucherId}: ${smsResponse.data.message}`);
+            }
+            
+        } catch (error) {
+            console.error(`❌ Error sending SMS for voucher ${voucherId}:`, error.message);
+            // Don't throw error - SMS failure shouldn't stop the payment processing
+        }
+    }
+
     async updatePaymentStatus(paymentId, newStatus, tableName, referenceId) {
         try {
             // Update the specific table
@@ -312,6 +353,9 @@ class PaymentMonitor {
                         );
                         
                         console.log(`✅ Voucher ${voucherId} assigned to transaction ${transactionId} for payment ${referenceId}`);
+                        
+                        // Send SMS notification
+                        await this.sendVoucherSMS(voucherId, transactionId, referenceId);
                     } else {
                         console.log(`⚠️  No available vouchers found for bundle ${bundleId} (payment ${referenceId})`);
                     }
