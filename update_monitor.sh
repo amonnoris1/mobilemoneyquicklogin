@@ -22,7 +22,7 @@ if ! grep -q "SMS_API_URL" .env.production; then
     echo "🔧 Adding SMS configuration to .env.production..."
     echo "" >> .env.production
     echo "# SMS Configuration" >> .env.production
-    echo "SMS_API_URL=https://backup.norismedia.com/api/send_voucher_sms.php" >> .env.production
+    echo "SMS_API_URL=https://billing.norismedia.com/api/send_voucher_sms.php" >> .env.production
 fi
 
 # Restart the monitor
