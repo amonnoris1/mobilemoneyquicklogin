@@ -17,9 +17,9 @@ class PaymentMonitor {
     constructor() {
         this.dbConfig = {
             host: process.env.DB_HOST || 'srv995.hstgr.io',
-            user: process.env.DB_USER || 'u376913847_backup',
+            user: process.env.DB_USER || 'u376913847_billing',
             password: process.env.DB_PASS || 'Kakembo@0788',
-            database: process.env.DB_NAME || 'u376913847_backup'
+            database: process.env.DB_NAME || 'u376913847_billing'
         };
         
         this.iotecConfig = {
