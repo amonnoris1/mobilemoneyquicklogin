@@ -258,7 +258,7 @@ class PaymentMonitor {
             const customerPhone = rows[0].customer_phone;
             
             // Call PHP endpoint to send SMS
-            const smsApiUrl = process.env.SMS_API_URL || 'https://backup.norismedia.com/api/send_voucher_sms.php';
+            const smsApiUrl = process.env.SMS_API_URL || 'https://billing.norismedia.com/api/send_voucher_sms.php';
             
             const smsResponse = await axios.post(smsApiUrl, {
                 voucher_id: voucherId,
